@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reject Expense - Expense Tracker</title>
+    <title>Approve Expense - Expense Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -14,8 +14,8 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
-                    <div class="card-header bg-danger text-white">
-                        <h4><i class="fas fa-times-circle"></i> Reject Expense</h4>
+                    <div class="card-header bg-success text-white">
+                        <h4><i class="fas fa-check-circle"></i> Approve Expense</h4>
                     </div>
                     <div class="card-body">
                         <div th:if="${expense}" class="expense-details mb-4">
@@ -41,21 +41,20 @@
                             </div>
                         </div>
 
-                        <form th:action="@{/expenses/{id}/reject(id=${expense.id})}" method="post">
+                        <form th:action="@{/expenses/{id}/approve(id=${expense.id})}" method="post">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <div class="mb-3">
-                                <label for="reason" class="form-label">Rejection Reason <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="reason" name="reason" rows="4"
-                                         placeholder="Please provide a detailed reason for rejecting this expense..." required></textarea>
-                                <div class="form-text">A detailed reason helps the submitter understand why the expense was rejected.</div>
+                                <label for="comments" class="form-label">Approval Comments</label>
+                                <textarea class="form-control" id="comments" name="comments" rows="4"
+                                         placeholder="Add any comments about this approval..."></textarea>
                             </div>
 
                             <div class="d-flex justify-content-between">
                                 <a th:href="@{/expenses/pending}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Back to Pending
                                 </a>
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-times"></i> Reject Expense
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Approve Expense
                                 </button>
                             </div>
                         </form>

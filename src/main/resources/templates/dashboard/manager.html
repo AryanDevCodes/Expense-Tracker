@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Manager Dashboard Fragment -->
+    <div th:fragment="manager-dashboard">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-user-tie"></i> Manager Dashboard</h2>
+                <p class="text-muted">Manage your team's expenses and approvals</p>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" th:text="${pendingCount ?: 0}">0</h4>
+                                <p class="card-text">Pending Approvals</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" th:text="${teamExpenseCount ?: 0}">0</h4>
+                                <p class="card-text">Team Expenses</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" th:text="${approvedThisMonth ?: 0}">0</h4>
+                                <p class="card-text">Approved This Month</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <a href="/expenses/pending" class="btn btn-outline-warning d-block mb-2">
+                                    <i class="fas fa-clock"></i><br>Pending Approvals
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/expenses" class="btn btn-outline-info d-block mb-2">
+                                    <i class="fas fa-list"></i><br>Team Expenses
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/expenses/submit" class="btn btn-outline-primary d-block mb-2">
+                                    <i class="fas fa-plus"></i><br>Submit Expense
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/users/new" class="btn btn-outline-success d-block mb-2">
+                                    <i class="fas fa-user-plus"></i><br>Add Team Member
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approvals & Team Activity -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-hourglass-half"></i> Pending Approvals</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="expense : ${pendingApprovals}">
+                                        <td th:text="${expense.submitter.username}"></td>
+                                        <td th:text="${expense.amount + ' ' + expense.currency}"></td>
+                                        <td th:text="${#temporals.format(expense.date, 'dd/MM/yyyy')}"></td>
+                                        <td>
+                                            <a th:href="@{/expenses/{id}/approve(id=${expense.id})}" class="btn btn-sm btn-success">Approve</a>
+                                            <a th:href="@{/expenses/{id}(id=${expense.id})}" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line"></i> Team Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="teamActivityChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

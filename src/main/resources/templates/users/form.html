@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Form - Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div th:replace="~{layout/base :: navbar}"></div>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>
+                            <i class="fas fa-user-plus"></i>
+                            <span th:if="${user.id != null}" th:text="'Edit User'">Edit User</span>
+                            <span th:if="${user.id == null}">
+                                <span th:if="${isAdmin}">Create New User/Manager</span>
+                                <span th:if="${isManager and !isAdmin}">Create New Employee</span>
+                            </span>
+                        </h4>
+                        <p class="mb-0 text-muted" th:if="${user.id == null}">
+                            <span th:if="${isAdmin}">As an admin, you can create both employees and managers</span>
+                            <span th:if="${isManager and !isAdmin}">As a manager, you can create employees for your team</span>
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Add error and success message display -->
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i> <span th:text="${message}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <form th:action="@{${user.id != null ? '/admin/users/' + user.id : '/admin/users'}}"
+                              th:object="${user}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="username" th:field="*{username}"
+                                               th:readonly="${user.id != null}" required>
+                                        <div class="form-text" th:if="${user.id != null}">Username cannot be changed after creation</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" id="email" th:field="*{email}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Password fields only for new users -->
+                            <div th:if="${user.id == null}" class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                                        <input type="password" class="form-control" id="password" th:field="*{password}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="companyId" class="form-label">Company <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="companyId" name="companyId" required>
+                                            <option value="">Select Company</option>
+                                            <option th:each="company : ${companies}"
+                                                    th:value="${company.id}"
+                                                    th:text="${company.name}"
+                                                    th:selected="${user.company != null and user.company.id == company.id}">
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="roleName" class="form-label">Role <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="roleName" name="roleName" required onchange="toggleManagerField()">
+                                            <option value="">Select Role</option>
+                                            <option th:each="role : ${roles}"
+                                                    th:value="${role.name}"
+                                                    th:text="${role.name}"
+                                                    th:selected="${user.roles != null and !user.roles.isEmpty() and user.roles.iterator().next().name == role.name}">
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3" id="managerField">
+                                        <label for="managerId" class="form-label">Assign Manager</label>
+                                        <select class="form-select" id="managerId" name="managerId">
+                                            <option value="">Select Manager (Optional)</option>
+                                            <option th:each="manager : ${managers}"
+                                                    th:value="${manager.id}"
+                                                    th:text="${manager.username + ' (' + manager.email + ')'}"
+                                                    th:selected="${user.manager != null and user.manager.id == manager.id}">
+                                            </option>
+                                        </select>
+                                        <div class="form-text">Only required for employees</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="/admin/users" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    <span th:if="${user.id != null}">Update User</span>
+                                    <span th:if="${user.id == null}">Create User</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleManagerField() {
+            const roleSelect = document.getElementById('roleName');
+            const managerField = document.getElementById('managerField');
+
+            if (roleSelect.value === 'EMPLOYEE') {
+                managerField.style.display = 'block';
+            } else {
+                managerField.style.display = 'none';
+                document.getElementById('managerId').value = '';
+            }
+        }
+
+        // Initialize the form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleManagerField();
+        });
+
+        // Password confirmation validation
+        document.getElementById('confirmPassword')?.addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+
+            if (password !== confirmPassword) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+</body>
+</html>

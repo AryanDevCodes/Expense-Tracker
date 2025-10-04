@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses - Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div th:replace="~{layout/base :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4><i class="fas fa-list"></i> Expenses</h4>
+                        <div>
+                            <a href="/expenses/submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> New Expense
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filters -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" placeholder="Search..." id="searchFilter">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="DRAFT">Draft</option>
+                                    <option value="SUBMITTED">Submitted</option>
+                                    <option value="APPROVED">Approved</option>
+                                    <option value="REJECTED">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">All Categories</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Meals">Meals</option>
+                                    <option value="Office">Office</option>
+                                    <option value="Training">Training</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="date" class="form-control" id="dateFromFilter">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="date" class="form-control" id="dateToFilter">
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Expenses Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Category</th>
+                                        <th>Amount</th>
+                                        <th>Submitter</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="expense : ${expenses}">
+                                        <td th:text="${#temporals.format(expense.date, 'dd/MM/yyyy')}"></td>
+                                        <td th:text="${expense.description}"></td>
+                                        <td>
+                                            <span class="badge bg-secondary" th:text="${expense.category}"></span>
+                                        </td>
+                                        <td th:text="${expense.amount + ' ' + expense.currency}"></td>
+                                        <td th:text="${expense.submitter.username}"></td>
+                                        <td>
+                                            <span class="badge bg-success" th:if="${expense.status == 'APPROVED'}" th:text="${expense.status}"></span>
+                                            <span class="badge bg-danger" th:if="${expense.status == 'REJECTED'}" th:text="${expense.status}"></span>
+                                            <span class="badge bg-warning" th:if="${expense.status == 'SUBMITTED'}" th:text="${expense.status}"></span>
+                                            <span class="badge bg-secondary" th:if="${expense.status != 'APPROVED' and expense.status != 'REJECTED' and expense.status != 'SUBMITTED'}" th:text="${expense.status}"></span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a th:href="@{/expenses/{id}(id=${expense.id})}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                <a th:if="${expense.status == 'SUBMITTED'}"
+                                                   th:href="@{/expenses/{id}/approve(id=${expense.id})}"
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </a>
+                                                <a th:if="${expense.status == 'SUBMITTED'}"
+                                                   th:href="@{/expenses/{id}/reject(id=${expense.id})}"
+                                                   class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav th:if="${totalPages > 1}">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/expenses(page=${currentPage - 1})}">Previous</a>
+                                </li>
+                                <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                    class="page-item" th:classappend="${i == currentPage ? 'active' : ''}">
+                                    <a class="page-link" th:href="@{/expenses(page=${i})}" th:text="${i + 1}"></a>
+                                </li>
+                                <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/expenses(page=${currentPage + 1})}">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function clearFilters() {
+            document.getElementById('searchFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('dateFromFilter').value = '';
+            document.getElementById('dateToFilter').value = '';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Details - Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div th:replace="~{layout/base :: navbar}"></div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4><i class="fas fa-receipt"></i> Expense Details</h4>
+                        <div>
+                            <span class="badge bg-success" th:if="${expense.status == 'APPROVED'}" th:text="${expense.status}"></span>
+                            <span class="badge bg-danger" th:if="${expense.status == 'REJECTED'}" th:text="${expense.status}"></span>
+                            <span class="badge bg-warning" th:if="${expense.status == 'SUBMITTED'}" th:text="${expense.status}"></span>
+                            <span class="badge bg-secondary" th:if="${expense.status == 'DRAFT'}" th:text="${expense.status}"></span>
+                            <span class="badge bg-info" th:if="${expense.status != 'APPROVED' and expense.status != 'REJECTED' and expense.status != 'SUBMITTED' and expense.status != 'DRAFT'}" th:text="${expense.status}"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Expense Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6>Expense Information</h6>
+                                <p><strong>Amount:</strong> <span th:text="${expense.amount + ' ' + expense.currency}" class="text-primary"></span></p>
+                                <p><strong>Date:</strong> <span th:text="${#temporals.format(expense.date, 'dd/MM/yyyy')}"></span></p>
+                                <p><strong>Category:</strong> <span class="badge bg-secondary" th:text="${expense.category}"></span></p>
+                                <p th:if="${expense.baseCurrencyAmount}"><strong>Base Amount:</strong> <span th:text="${expense.baseCurrencyAmount + ' ' + expense.submitter.company.defaultCurrency}"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Submission Details</h6>
+                                <p><strong>Submitted by:</strong> <span th:text="${expense.submitter.username}"></span></p>
+                                <p><strong>Company:</strong> <span th:text="${expense.submitter.company.name}"></span></p>
+                                <p th:if="${expense.submittedAt}"><strong>Submitted:</strong> <span th:text="${#temporals.format(expense.submittedAt, 'dd/MM/yyyy HH:mm')}"></span></p>
+                                <p th:if="${expense.lastActionAt}"><strong>Last Action:</strong> <span th:text="${#temporals.format(expense.lastActionAt, 'dd/MM/yyyy HH:mm')}"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4" th:if="${expense.description}">
+                            <h6>Description</h6>
+                            <div class="alert alert-light">
+                                <p th:text="${expense.description}" class="mb-0"></p>
+                            </div>
+                        </div>
+
+                        <!-- Rejection Reason -->
+                        <div class="mb-4" th:if="${expense.rejectionReason}">
+                            <h6>Rejection Reason</h6>
+                            <div class="alert alert-danger">
+                                <p th:text="${expense.rejectionReason}" class="mb-0"></p>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="/expenses" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Expenses
+                            </a>
+                            <div th:if="${canApprove}">
+                                <a th:href="@{/expenses/{id}/approve(id=${expense.id})}" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Approve
+                                </a>
+                                <a th:href="@{/expenses/{id}/reject(id=${expense.id})}" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Reject
+                                </a>
+                            </div>
+                            <div th:if="${expense.receiptUrl != null and !#strings.isEmpty(expense.receiptUrl)}">
+                                <a th:href="${expense.receiptUrl}" target="_blank" class="btn btn-outline-info">
+                                    <i class="fas fa-file-image"></i> View Receipt
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approval Steps -->
+                <div class="card mt-4" th:if="${!#lists.isEmpty(approvalSteps)}">
+                    <div class="card-header">
+                        <h5><i class="fas fa-timeline"></i> Approval Timeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div th:each="step, iterStat : ${approvalSteps}" class="timeline-item">
+                                <div class="timeline-marker">
+                                    <i class="fas fa-check text-success" th:if="${step.status.name() == 'APPROVED'}"></i>
+                                    <i class="fas fa-times text-danger" th:if="${step.status.name() == 'REJECTED'}"></i>
+                                    <i class="fas fa-clock text-warning" th:if="${step.status.name() == 'PENDING'}"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 th:text="'Step ' + ${step.sequence} + ' - ' + ${step.approver.username}"></h6>
+                                    <p class="text-muted mb-1">
+                                        <span class="badge bg-success" th:if="${step.status.name() == 'APPROVED'}" th:text="${step.status}"></span>
+                                        <span class="badge bg-danger" th:if="${step.status.name() == 'REJECTED'}" th:text="${step.status}"></span>
+                                        <span class="badge bg-warning" th:if="${step.status.name() == 'PENDING'}" th:text="${step.status}"></span>
+                                    </p>
+                                    <p th:if="${step.comments}" th:text="${step.comments}"></p>
+                                    <small th:if="${step.actionDate}" class="text-muted" th:text="${#temporals.format(step.actionDate, 'dd/MM/yyyy HH:mm')}"></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receipt Preview -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-paperclip"></i> Receipt</h6>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${expense.receiptUrl != null and !#strings.isEmpty(expense.receiptUrl)}">
+                            <img th:src="${expense.receiptUrl}" class="img-fluid rounded" alt="Receipt">
+                            <div class="mt-2">
+                                <a th:href="${expense.receiptUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt"></i> Open Full Size
+                                </a>
+                            </div>
+                        </div>
+                        <div th:if="${expense.receiptUrl == null or #strings.isEmpty(expense.receiptUrl)}" class="text-center text-muted">
+                            <i class="fas fa-file-image fa-3x mb-2"></i>
+                            <p>No receipt uploaded</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense Summary -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-info-circle"></i> Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>Total Amount:</strong><br>
+                            <span class="h5 text-primary" th:text="${expense.amount + ' ' + expense.currency}"></span>
+                        </div>
+                        <div th:if="${expense.baseCurrencyAmount}" class="mb-2">
+                            <strong>Base Currency:</strong><br>
+                            <span th:text="${expense.baseCurrencyAmount + ' ' + expense.submitter.company.defaultCurrency}"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Category:</strong><br>
+                            <span class="badge bg-secondary" th:text="${expense.category}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .timeline-marker {
+            position: absolute;
+            left: -30px;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
